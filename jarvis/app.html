@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Voice Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        #status {
+            font-size: 1.5em;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Jarvis Voice Assistant</h1>
+    <p id="status">Press the button and say "Jarvis" to activate</p>
+    <button id="activateButton">Activate Jarvis</button>
+
+    <script>
+        const button = document.getElementById("activateButton");
+        const status = document.getElementById("status");
+
+        // Function to speak text
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Function to process commands
+        function processCommand(command) {
+            command = command.toLowerCase();
+            if (command.includes("open google")) {
+                window.open("https://www.google.com", "_blank");
+            } else if (command.includes("open youtube")) {
+                window.open("https://www.youtube.com", "_blank");
+            } else if (command.includes("open instagram")) {
+                window.open("https://www.instagram.com", "_blank");
+            } else if (command.includes("play")) {
+                let song = command.split(" ")[1];
+                // Assuming you have a predefined music library with links to songs
+                const musicLibrary = {
+                    "song1": "https://example.com/song1",
+                    "song2": "https://example.com/song2"
+                };
+                if (musicLibrary[song]) {
+                    window.open(musicLibrary[song], "_blank");
+                } else {
+                    speak(`Sorry, I couldn't find the song ${song}.`);
+                }
+            } else if (command.includes("news")) {
+                fetch('https://newsapi.org/v2/top-headlines?country=in&apiKey=de7e113255db44da8bca24ed7b860683')
+                    .then(response => response.json())
+                    .then(data => {
+                        const articles = data.articles;
+                        if (articles && articles.length > 0) {
+                            articles.forEach(article => {
+                                speak(article.title);
+                            });
+                        } else {
+                            speak("Sorry, I couldn't fetch the news at the moment.");
+                        }
+                    });
+            } else if (command.includes("jarvis off")) {
+                speak("Shutting down Jarvis. Goodbye!");
+            } else {
+                speak("I didn't understand that command.");
+            }
+        }
+
+        // Function to recognize speech
+        function recognizeSpeech() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const spokenWord = event.results[0][0].transcript.toLowerCase();
+                if (spokenWord === "jarvis") {
+                    speak("Yes, how can I assist you?");
+                    recognition.stop();
+
+                    recognition.onend = () => {
+                        recognizeCommand();
+                    };
+                } else {
+                    speak("Please say 'Jarvis' to activate.");
+                }
+            };
+
+            recognition.onerror = (event) => {
+                speak("I couldn't hear you. Please try again.");
+                console.error(event.error);
+            };
+        }
+
+        // Function to listen for the command after Jarvis activation
+        function recognizeCommand() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const command = event.results[0][0].transcript;
+                processCommand(command);
+            };
+
+            recognition.onerror = (event) => {
+                speak("I couldn't understand that command.");
+                console.error(event.error);
+            };
+        }
+
+        // Button click event to start listening
+        button.addEventListener("click", () => {
+            status.textContent = "Listening for wake word 'Jarvis'...";
+            recognizeSpeech();
+        });
+    </script>
+
+</body>
+</html>
